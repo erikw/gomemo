@@ -532,5 +532,3 @@ By the end of Gomemo v1, I should be comfortable with:
 * Explaining architectural decisions in interviews
 
 The project should remain intentionally small, focused, and complete.
-
-
