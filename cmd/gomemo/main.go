@@ -23,7 +23,7 @@ func main() {
 			fmt.Printf("Error serving request: %v\n", err)
 		}
 	})
-	err := http.ListenAndServe(cfg.Port, r)
+	err := http.ListenAndServe(cfg.AddrString(), r)
 	if err != nil {
 		fmt.Printf("Error serving: %v\n", err)
 	}

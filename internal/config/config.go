@@ -14,7 +14,6 @@ func Load() Config {
 	if port == "" {
 		port = "8080"
 	}
-	port = fmt.Sprintf(":%s", port)
 
 	return Config{
 		Port: port,
@@ -24,4 +23,8 @@ func Load() Config {
 func (cfg Config) String() string {
 	type ConfigStringer Config
 	return fmt.Sprintf("Config: %+v", ConfigStringer(cfg))
+}
+
+func (cfg Config) AddrString() string {
+	return fmt.Sprintf(":%s", cfg.Port)
 }
