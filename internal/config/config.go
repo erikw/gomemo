@@ -14,6 +14,7 @@ func Load() Config {
 	if port == "" {
 		port = "8080"
 	}
+	port = fmt.Sprintf(":%s", port)
 
 	return Config{
 		Port: port,
