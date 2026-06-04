@@ -2,8 +2,15 @@
 
 A small note taking app written in Go
 
-# Development
+# Build
+Run:
 
+```bash
+make build
+```
+
+
+# Development
 Run the server with
 
 ```bash

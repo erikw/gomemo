@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -10,13 +11,13 @@ type Config struct {
 	Port string
 }
 
-func Load() Config {
-	host := os.Getenv("HOST")
+func Load() (Config, error) {
+	host := strings.TrimSpace(os.Getenv("HOST"))
 	if host == "" {
 		host = "127.0.0.1"
 	}
 
-	port := os.Getenv("PORT")
+	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
 		port = "8080"
 	}
@@ -24,7 +25,7 @@ func Load() Config {
 	return Config{
 		Port: port,
 		Host: host,
-	}
+	}, nil
 }
 
 func (cfg Config) String() string {

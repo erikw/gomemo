@@ -12,7 +12,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Printf("Error loading configuration")
+	}
 
 	fmt.Printf("Starting Gomemo with\n%v\n", cfg)
 
