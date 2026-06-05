@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/erikw/gomemo/internal/config"
@@ -11,13 +12,40 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+var logger *slog.Logger
+
+func init() {
+	initLogger(true) // TODO move to main() to allow --debug cli flag?
+}
+
+func initLogger(debug bool) {
+	level := slog.LevelInfo
+	if debug {
+		level = slog.LevelDebug
+	}
+
+	logger = slog.New(
+		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: level,
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				// Remove timestamp from output.
+				if a.Key == slog.TimeKey {
+					return slog.Attr{}
+				}
+				return a
+			},
+		}),
+	)
+}
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Printf("Error loading configuration")
+		logger.Error("Error loading configuration")
+		os.Exit(1)
 	}
 
-	fmt.Printf("Starting Gomemo with\n%v\n", cfg)
+	logger.Info("Starting Gomemo.", "config", cfg)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -27,18 +55,14 @@ func main() {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 
 		// fmt.Println(middleware.GetReqID(r.Context()))
-		// _, err := w.Write([]byte("Hello, world"))
-		// if err != nil {
-		//	// TODO use structured logging pkg
-		//	fmt.Printf("Error serving request: %v\n", err)
-		// }
+
 		respondJSON(w, http.StatusOK, map[string]string{
 			"status": "ok",
 		})
 	})
-	err := http.ListenAndServe(cfg.AddrString(), r)
+	err = http.ListenAndServe(cfg.AddrString(), r)
 	if err != nil {
-		fmt.Printf("Error serving: %v\n", err)
+		logger.Error("Error serving HTTP.", "error", err.Error)
 	}
 }
 
@@ -47,6 +71,7 @@ func respondJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {
+		logger.Error("Could not encode JSON response.", "status", status, "value", v)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
