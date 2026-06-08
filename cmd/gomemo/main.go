@@ -15,9 +15,11 @@ import (
 var logger *slog.Logger
 
 func init() {
+	// NOPE testing
 	initLogger(true) // TODO move to main() to allow --debug cli flag?
 }
 
+// NOPE testa
 func initLogger(debug bool) {
 	level := slog.LevelInfo
 	if debug {
@@ -25,17 +27,12 @@ func initLogger(debug bool) {
 	}
 
 	logger = slog.New(
-		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: level,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				// Remove timestamp from output.
-				if a.Key == slog.TimeKey {
-					return slog.Attr{}
-				}
-				return a
-			},
 		}),
 	)
+
+	slog.SetDefault(logger)
 }
 
 func main() {
@@ -72,6 +69,6 @@ func respondJSON(w http.ResponseWriter, status int, v any) {
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		logger.Error("Could not encode JSON response.", "status", status, "value", v)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		//http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
