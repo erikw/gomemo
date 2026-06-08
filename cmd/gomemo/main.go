@@ -15,11 +15,9 @@ import (
 var logger *slog.Logger
 
 func init() {
-	// NOPE testing
 	initLogger(true) // TODO move to main() to allow --debug cli flag?
 }
 
-// NOPE testa
 func initLogger(debug bool) {
 	level := slog.LevelInfo
 	if debug {
