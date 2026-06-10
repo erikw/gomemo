@@ -1,17 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
-	"time"
 
+	"github.com/erikw/gomemo/internal/api"
 	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/version"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 var logger *slog.Logger
@@ -47,23 +43,8 @@ func main() {
 
 	logger.Info("Starting Gomemo.", "config", cfg)
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Timeout(20 * time.Second))
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-
-		// fmt.Println(middleware.GetReqID(r.Context()))
-
-		respondJSON(w, http.StatusOK, map[string]string{
-			"status": "ok",
-		})
-	})
-	err = http.ListenAndServe(cfg.AddrString(), r)
-	if err != nil {
-		logger.Error("Error serving HTTP.", "error", err.Error)
-	}
+	router := api.NewRouter(logger, cfg)
+	router.RunServer()
 }
 
 func initLogger(debug bool) {
@@ -82,14 +63,4 @@ func initLogger(debug bool) {
 		logger.Debug("Debug logging enabled.")
 	}
 
-}
-
-func respondJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		logger.Error("Could not encode JSON response.", "status", status, "value", v)
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
