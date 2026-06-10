@@ -6,7 +6,7 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = []
+  args_bin = ["-d"]
   bin = "./tmp/main"
   cmd = "go build -o ./gomemo ./cmd/gomemo"
   delay = 1000

@@ -2,41 +2,46 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/erikw/gomemo/internal/config"
+	"github.com/erikw/gomemo/internal/version"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 var logger *slog.Logger
 
-func init() {
-	initLogger(true) // TODO move to main() to allow --debug cli flag?
-}
+func main() {
+	var err error
+	var args config.Args
 
-func initLogger(debug bool) {
-	level := slog.LevelInfo
-	if debug {
-		level = slog.LevelDebug
+	args, err = config.ParseArgs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing args: %v\n", err.Error())
+		os.Exit(1)
 	}
 
-	logger = slog.New(
-		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			Level: level,
-		}),
-	)
+	if args.Help {
+		config.PrintHelp()
+		os.Exit(0)
+	}
 
-	slog.SetDefault(logger)
-}
+	if args.Version {
+		fmt.Printf("Version: %s\n", version.Version)
+		os.Exit(0)
+	}
 
-func main() {
-	cfg, err := config.Load()
+	initLogger(args.Debug)
+
+	var cfg config.Config
+	cfg, err = config.Load()
 	if err != nil {
-		logger.Error("Error loading configuration")
+		logger.Error(fmt.Sprintf("Error loading configuration: %v", err.Error()))
 		os.Exit(1)
 	}
 
@@ -59,6 +64,24 @@ func main() {
 	if err != nil {
 		logger.Error("Error serving HTTP.", "error", err.Error)
 	}
+}
+
+func initLogger(debug bool) {
+	level := slog.LevelInfo
+	if debug {
+		level = slog.LevelDebug
+	}
+
+	logger = slog.New(
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: level,
+		}),
+	)
+
+	if debug {
+		logger.Debug("Debug logging enabled.")
+	}
+
 }
 
 func respondJSON(w http.ResponseWriter, status int, v any) {
