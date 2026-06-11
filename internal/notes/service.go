@@ -22,6 +22,7 @@ func NewService(logger *slog.Logger) *Service {
 }
 
 // TODO return pointer to Note?
+// TODO use parm?:  ctx context.Context
 func (s *Service) GetByID(ID int64) (Note, error) {
 	if note, ok := db[ID]; ok {
 		return note, nil
