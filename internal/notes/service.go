@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO move to proper storage layer, first in-memory module
 var db = map[int64]Note{
 	1: {1, "Title of note", "Some content string here", time.Now(), time.Now()},
 }
