@@ -7,6 +7,7 @@ import (
 
 	"github.com/erikw/gomemo/internal/api"
 	"github.com/erikw/gomemo/internal/config"
+	"github.com/erikw/gomemo/internal/notes"
 	"github.com/erikw/gomemo/internal/version"
 )
 
@@ -43,7 +44,10 @@ func main() {
 
 	logger.Info("Starting Gomemo.", "config", cfg)
 
-	router := api.NewRouter(logger, cfg)
+	notesService := notes.NewService(logger)
+	notesHandler := notes.NewHandler(logger, notesService)
+
+	router := api.NewRouter(logger, cfg, notesHandler)
 	router.RunServer()
 }
 

@@ -1,6 +1,9 @@
 package notes
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Note struct {
 	ID         int64     `json:"id"`
@@ -10,4 +13,6 @@ type Note struct {
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
-// TODO implement stringer interface?
+func (n Note) String() string {
+	return fmt.Sprintf("Note{id=%d, title=%q}", n.ID, n.Title)
+}

@@ -11,12 +11,14 @@ import (
 )
 
 type Handler struct {
-	logger *slog.Logger
+	logger  *slog.Logger
+	service *Service
 }
 
-func NewHandler(logger *slog.Logger) *Handler {
+func NewHandler(logger *slog.Logger, service *Service) *Handler {
 	return &Handler{
-		logger: logger,
+		logger:  logger,
+		service: service,
 	}
 }
 
@@ -29,7 +31,7 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	note, err := GetByID(id)
+	note, err := h.service.GetByID(id)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Could not fetch Note with ID `%d`.", id))
 		httpx.RespondError(w, http.StatusNotFound, "Note could not be found")

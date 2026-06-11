@@ -13,14 +13,16 @@ import (
 )
 
 type Router struct {
-	logger *slog.Logger
-	config config.Config
+	logger       *slog.Logger
+	config       config.Config
+	notesHandler *notes.Handler
 }
 
-func NewRouter(logger *slog.Logger, cfg config.Config) *Router {
+func NewRouter(logger *slog.Logger, cfg config.Config, notesHandler *notes.Handler) *Router {
 	return &Router{
-		logger: logger,
-		config: cfg,
+		logger:       logger,
+		config:       cfg,
+		notesHandler: notesHandler,
 	}
 }
 
@@ -42,8 +44,7 @@ func (r *Router) setupRoutes(cr chi.Router) {
 	cr.Get("/", r.getHealth)
 	cr.Get("/health", r.getHealth)
 
-	nh := notes.NewHandler(r.logger)
-	cr.Get("/notes/{noteID}", nh.HandleGetByID)
+	cr.Get("/notes/{noteID}", r.notesHandler.HandleGetByID)
 }
 
 func (r *Router) getHealth(w http.ResponseWriter, req *http.Request) {
