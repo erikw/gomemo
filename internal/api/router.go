@@ -36,7 +36,7 @@ func (r *Router) RunServer() {
 
 	err := http.ListenAndServe(r.config.AddrString(), cr)
 	if err != nil {
-		r.logger.Error("Error serving HTTP.", "error", err.Error)
+		r.logger.Error("Error serving HTTP.", "error", err.Error())
 	}
 }
 
