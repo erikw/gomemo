@@ -7,44 +7,55 @@ import (
 
 	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/httpx"
-	"github.com/erikw/gomemo/internal/notes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Router struct {
-	logger       *slog.Logger
-	config       config.Config
-	notesHandler *notes.Handler
+	logger    *slog.Logger
+	config    config.Config
+	chiRouter chi.Router
+	handlers  []Handler
 }
 
-func NewRouter(logger *slog.Logger, cfg config.Config, notesHandler *notes.Handler) *Router {
-	return &Router{
-		logger:       logger,
-		config:       cfg,
-		notesHandler: notesHandler,
+func NewRouter(logger *slog.Logger, cfg config.Config) *Router {
+	r := Router{
+		logger:    logger,
+		config:    cfg,
+		chiRouter: chi.NewRouter(),
 	}
+	r.setupMiddlewares()
+	r.setupRoutes()
+	return &r
 }
+
+func (r *Router) RegisterHandler(h Handler) {
+	h.RegisterRoutes(r)
+	r.handlers = append(r.handlers, h)
+}
+
+func (r *Router) Get(pattern string, fn http.HandlerFunc)    { r.chiRouter.Get(pattern, fn) }
+func (r *Router) Post(pattern string, fn http.HandlerFunc)   { r.chiRouter.Post(pattern, fn) }
+func (r *Router) Put(pattern string, fn http.HandlerFunc)    { r.chiRouter.Put(pattern, fn) }
+func (r *Router) Delete(pattern string, fn http.HandlerFunc) { r.chiRouter.Delete(pattern, fn) }
 
 func (r *Router) RunServer() {
-	cr := chi.NewRouter()
-	cr.Use(middleware.Logger)
-	cr.Use(middleware.RequestID)
-	cr.Use(middleware.Timeout(20 * time.Second))
-
-	r.setupRoutes(cr)
-
-	err := http.ListenAndServe(r.config.AddrString(), cr)
+	err := http.ListenAndServe(r.config.AddrString(), r.chiRouter)
 	if err != nil {
 		r.logger.Error("Error serving HTTP.", "error", err.Error())
 	}
 }
 
-func (r *Router) setupRoutes(cr chi.Router) {
-	cr.Get("/", r.getHealth)
-	cr.Get("/health", r.getHealth)
+func (r *Router) setupMiddlewares() {
+	r.chiRouter.Use(middleware.Logger)
+	r.chiRouter.Use(middleware.RequestID)
+	r.chiRouter.Use(middleware.Timeout(20 * time.Second))
 
-	cr.Get("/notes/{noteID}", r.notesHandler.HandleGetByID)
+}
+
+func (r *Router) setupRoutes() {
+	r.Get("/", r.getHealth)
+	r.Get("/health", r.getHealth)
 }
 
 func (r *Router) getHealth(w http.ResponseWriter, req *http.Request) {

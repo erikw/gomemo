@@ -43,11 +43,12 @@ func main() {
 	}
 
 	logger.Info("Starting Gomemo.", "config", cfg)
+	router := api.NewRouter(logger, cfg)
 
 	notesService := notes.NewService(logger)
 	notesHandler := notes.NewHandler(logger, notesService)
+	router.RegisterHandler(notesHandler)
 
-	router := api.NewRouter(logger, cfg, notesHandler)
 	router.RunServer()
 }
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/erikw/gomemo/internal/api"
 	"github.com/erikw/gomemo/internal/httpx"
 	"github.com/go-chi/chi/v5"
 )
@@ -20,6 +21,10 @@ func NewHandler(logger *slog.Logger, service *Service) *Handler {
 		logger:  logger,
 		service: service,
 	}
+}
+
+func (h *Handler) RegisterRoutes(r api.RouteRegistrar) {
+	r.Get("/notes/{noteID}", h.HandleGetByID)
 }
 
 func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {

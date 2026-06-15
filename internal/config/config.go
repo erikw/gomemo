@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+const defaultHost = "127.0.0.1"
+const defaultPort = "8080"
+
 type Config struct {
 	Host string
 	Port string
@@ -14,12 +17,12 @@ type Config struct {
 func Load() (Config, error) {
 	host := strings.TrimSpace(os.Getenv("HOST"))
 	if host == "" {
-		host = "127.0.0.1"
+		host = defaultHost
 	}
 
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
-		port = "8080"
+		port = defaultPort
 	}
 
 	return Config{
