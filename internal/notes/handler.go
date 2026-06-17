@@ -2,6 +2,7 @@ package notes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -41,7 +42,7 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, req *http.Request) {
 
 	notes, err := h.service.GetAll(req.Context())
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("could not fetch Notes"))
+		h.logger.Error("could not fetch Notes")
 		httpx.RespondError(w, http.StatusNotFound, "Note could not be found.")
 		return
 	}
@@ -54,18 +55,23 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, req *http.Request) {
 func (h *Handler) handleCreate(w http.ResponseWriter, req *http.Request) {
 	var noteReq createNoteRequest
 
-	if err := json.NewDecoder(req.Body).Decode(&noteReq); err != nil {
-		h.logger.Error(fmt.Sprintf("could not parse Note JSON from request body"))
+	decoder := json.NewDecoder(req.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&noteReq); err != nil {
+		h.logger.Error("could not parse Note JSON from request body")
 		httpx.RespondError(w, http.StatusBadRequest, "Invalid JSON format for Note.")
 		return
 	}
 
-	// TODO validate noteReq with helper
-
 	note, err := h.service.Create(req.Context(), noteReq.Title, noteReq.Content)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("could not create Note"))
-		httpx.RespondError(w, http.StatusInternalServerError, "Error creating Note.")
+		h.logger.Error("could not create Note", "error", err.Error())
+		switch {
+		case errors.Is(err, ErrTitleRequired):
+			httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		default:
+			httpx.RespondError(w, http.StatusInternalServerError, "Error creating Note.")
+		}
 		return
 	}
 
