@@ -22,6 +22,17 @@ func NewService(logger *slog.Logger) *Service {
 	}
 }
 
+func (s *Service) GetAll(ctx context.Context) ([]Note, error) {
+	// TODO pass ctx to DB. Set custom timeout?
+
+	notes := make([]Note, 0, len(db))
+	for _, note := range db {
+		notes = append(notes, note)
+	}
+
+	return notes, nil
+}
+
 func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 	if note, ok := db[ID]; ok {
