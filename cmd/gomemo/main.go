@@ -47,7 +47,7 @@ func main() {
 
 	notesService := notes.NewService(logger)
 	notesHandler := notes.NewHandler(logger, notesService)
-	router.RegisterHandler(notesHandler)
+	notesHandler.RegisterRoutes(router.ChiRouter())
 
 	router.RunServer()
 }

@@ -15,7 +15,6 @@ type Router struct {
 	logger    *slog.Logger
 	config    config.Config
 	chiRouter chi.Router
-	handlers  []Handler
 }
 
 func NewRouter(logger *slog.Logger, cfg config.Config) *Router {
@@ -29,15 +28,7 @@ func NewRouter(logger *slog.Logger, cfg config.Config) *Router {
 	return &r
 }
 
-func (r *Router) RegisterHandler(h Handler) {
-	h.RegisterRoutes(r)
-	r.handlers = append(r.handlers, h)
-}
-
-func (r *Router) Get(pattern string, fn http.HandlerFunc)    { r.chiRouter.Get(pattern, fn) }
-func (r *Router) Post(pattern string, fn http.HandlerFunc)   { r.chiRouter.Post(pattern, fn) }
-func (r *Router) Put(pattern string, fn http.HandlerFunc)    { r.chiRouter.Put(pattern, fn) }
-func (r *Router) Delete(pattern string, fn http.HandlerFunc) { r.chiRouter.Delete(pattern, fn) }
+func (r *Router) ChiRouter() chi.Router { return r.chiRouter }
 
 func (r *Router) RunServer() {
 	err := http.ListenAndServe(r.config.AddrString(), r.chiRouter)
@@ -54,8 +45,8 @@ func (r *Router) setupMiddlewares() {
 }
 
 func (r *Router) setupRoutes() {
-	r.Get("/", r.getHealth)
-	r.Get("/health", r.getHealth)
+	r.chiRouter.Get("/", r.getHealth)
+	r.chiRouter.Get("/health", r.getHealth)
 }
 
 func (r *Router) getHealth(w http.ResponseWriter, req *http.Request) {
