@@ -41,3 +41,13 @@ func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
 		return Note{}, fmt.Errorf("could not find note with ID `%d`", ID)
 	}
 }
+
+func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
+	// TODO pass ctx to DB. Set custom timeout?
+	if _, ok := db[ID]; ok {
+		delete(db, ID)
+		return true, nil
+	} else {
+		return false, nil
+	}
+}

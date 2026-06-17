@@ -25,9 +25,9 @@ func NewHandler(logger *slog.Logger, service *Service) *Handler {
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/notes", h.HandleGetAll) // TODO pagingate
 	r.Get("/notes/{noteID}", h.HandleGetByID)
+	r.Delete("/notes/{noteID}", h.HandleDeleteByID)
 	// TODO
 	// POST   /notes
-	// DELETE /notes/{id}
 }
 func (h *Handler) HandleGetAll(w http.ResponseWriter, req *http.Request) {
 
@@ -62,4 +62,33 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 	if err = httpx.RespondJSON(w, http.StatusOK, note); err != nil {
 		h.logger.Error("could not respond with JSON encoding", "noteID", id, "note", note)
 	}
+}
+
+func (h *Handler) HandleDeleteByID(w http.ResponseWriter, req *http.Request) {
+	// TODO extract to helper
+	idStr := chi.URLParam(req, "noteID")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.logger.Error(fmt.Sprintf("could not convert urlParam `%s` noteID to int64", idStr))
+		httpx.RespondError(w, http.StatusBadRequest, "Invalid notesID")
+		return
+	}
+
+	deleted, err := h.service.DeleteByID(req.Context(), id)
+	if err != nil {
+		h.logger.Error(fmt.Sprintf("could not delete Note with ID `%d`", id))
+		httpx.RespondError(w, http.StatusNotFound, "Note could not be deleted")
+		return
+	}
+
+	if deleted {
+		if err = httpx.RespondJSON(w, http.StatusNoContent, nil); err != nil {
+			h.logger.Error("could not respond with JSON encoding", "noteID", id)
+		}
+	} else {
+		if err = httpx.RespondJSON(w, http.StatusNotFound, nil); err != nil {
+			h.logger.Error("could not respond with JSON encoding", "noteID", id)
+		}
+	}
+
 }
