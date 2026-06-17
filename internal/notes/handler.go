@@ -35,7 +35,7 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	note, err := h.service.GetByID(id)
+	note, err := h.service.GetByID(req.Context(), id)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Could not fetch Note with ID `%d`.", id))
 		httpx.RespondError(w, http.StatusNotFound, "Note could not be found")

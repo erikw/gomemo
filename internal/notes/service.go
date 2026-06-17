@@ -1,6 +1,7 @@
 package notes
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -21,8 +22,8 @@ func NewService(logger *slog.Logger) *Service {
 	}
 }
 
-// TODO use parm?:  ctx context.Context
-func (s *Service) GetByID(ID int64) (Note, error) {
+func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
+	// TODO pass ctx to DB. Set custom timeout?
 	if note, ok := db[ID]; ok {
 		return note, nil
 	} else {
