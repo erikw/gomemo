@@ -8,6 +8,7 @@ import (
 	"github.com/erikw/gomemo/internal/api"
 	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/notes"
+	"github.com/erikw/gomemo/internal/storage"
 	"github.com/erikw/gomemo/internal/version"
 )
 
@@ -45,9 +46,10 @@ func main() {
 	logger.Info("Starting Gomemo.", "config", cfg)
 	router := api.NewRouter(logger, cfg)
 
-	notesService := notes.NewService(logger)
+	notesStore := storage.NewMemory[notes.Note](logger)
+	notesService := notes.NewService(logger, notesStore)
 	notesHandler := notes.NewHandler(logger, notesService)
-	notesHandler.RegisterRoutes(router.ChiRouter())
+	notesHandler.RegisterRoutes(router.ChiRouter()) // TODO should we not have an interface for a Handler with method RegisterRoutes?
 
 	router.RunServer()
 }

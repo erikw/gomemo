@@ -3,35 +3,40 @@ package notes
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
-)
 
-// TODO move to proper storage layer, first in-memory module
-var db = map[int64]Note{
-	1: {1, "Title of note", "Some content string here", time.Now(), time.Now()},
-}
+	"github.com/erikw/gomemo/internal/storage"
+)
 
 var ErrTitleRequired = errors.New("the field Title is required")
 
 type Service struct {
 	logger *slog.Logger
+	store  storage.Storage[Note]
 }
 
-func NewService(logger *slog.Logger) *Service {
+func NewService(logger *slog.Logger, store storage.Storage[Note]) *Service {
+	store.Create(Note{
+		1, "Title of note",
+		"Some content string here", time.Now(), time.Now()},
+	)
+
 	return &Service{
 		logger: logger,
+		store:  store,
 	}
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 
-	notes := make([]Note, 0, len(db))
-	for _, note := range db {
-		notes = append(notes, note)
+	var notes []Note
+	var err error
+	if notes, err = s.store.All(); err != nil {
+		s.logger.Error("could not retrieve all Notes")
+		return make([]Note, 0, 0), err
 	}
 
 	return notes, nil
@@ -39,11 +44,14 @@ func (s *Service) GetAll(ctx context.Context) ([]Note, error) {
 
 func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
-	if note, ok := db[ID]; ok {
-		return note, nil
-	} else {
-		return Note{}, fmt.Errorf("could not find note with ID `%d`", ID)
+	var note Note
+	var err error
+	if note, err = s.store.FindByID(ID); err != nil {
+		s.logger.Error("could not create a new Note in storage")
+		return Note{}, err
 	}
+
+	return note, nil
 }
 
 func (s *Service) Create(ctx context.Context, title string, content string) (Note, error) {
@@ -54,22 +62,33 @@ func (s *Service) Create(ctx context.Context, title string, content string) (Not
 	}
 
 	note := Note{
-		ID:         5, // TODO keep track of sequenced ID, with mutex
 		Title:      title,
 		Content:    content,
 		CreatedAt:  time.Now(),
 		ModifiedAt: time.Now(),
 	}
-	db[note.ID] = note
-	return note, nil
+
+	var createdNote Note
+	var err error
+	if createdNote, err = s.store.Create(note); err != nil {
+		s.logger.Error("could not create a new Note in storage")
+		return Note{}, err
+	}
+
+	return createdNote, nil
 }
 
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
 	// TODO pass ctx to DB. Set custom timeout?
-	if _, ok := db[ID]; ok {
-		delete(db, ID)
-		return true, nil
-	} else {
-		return false, nil
+
+	deleted, err := s.store.DeleteByID(ID)
+	if err != nil {
+		s.logger.Error("could not create a new Note in storage")
 	}
+
+	return deleted, err
+}
+
+func (s *Service) nextID() int64 {
+	return 5
 }
