@@ -24,6 +24,10 @@ func NewHandler(logger *slog.Logger, service *Service) *Handler {
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/notes/{noteID}", h.HandleGetByID)
+	// TODO
+	// POST   /notes
+	// GET    /notes
+	// DELETE /notes/{id}
 }
 
 func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
