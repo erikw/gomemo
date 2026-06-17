@@ -42,6 +42,19 @@ func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
 	}
 }
 
+func (s *Service) Create(ctx context.Context, title string, content string) (Note, error) {
+	// TODO pass ctx to DB. Set custom timeout?
+	note := Note{
+		ID:         5, // TODO keep track of sequenced ID, with mutex
+		Title:      title,
+		Content:    content,
+		CreatedAt:  time.Now(),
+		ModifiedAt: time.Now(),
+	}
+	db[note.ID] = note
+	return note, nil
+}
+
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 	if _, ok := db[ID]; ok {

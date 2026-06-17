@@ -1,6 +1,7 @@
 package notes
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,11 @@ type Handler struct {
 	service *Service
 }
 
+type createNoteRequest struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}
+
 func NewHandler(logger *slog.Logger, service *Service) *Handler {
 	return &Handler{
 		logger:  logger,
@@ -23,20 +29,20 @@ func NewHandler(logger *slog.Logger, service *Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
-	r.Get("/notes", h.HandleGetAll) // TODO pagingate
-	// r.Post("/notes", h.HandlePost) // TODO pagingate
-	r.Get("/notes/{noteID}", h.HandleGetByID)
-	r.Delete("/notes/{noteID}", h.HandleDeleteByID)
+	r.Get("/notes", h.handleGetAll) // TODO pagingate
+	r.Post("/notes", h.handleCreate)
+	r.Get("/notes/{noteID}", h.handleGetByID)
+	r.Delete("/notes/{noteID}", h.handleDeleteByID)
 	// TODO
 	// PATCH /notes/{id}
 }
 
-func (h *Handler) HandleGetAll(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) handleGetAll(w http.ResponseWriter, req *http.Request) {
 
 	notes, err := h.service.GetAll(req.Context())
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("could not fetch Notes"))
-		httpx.RespondError(w, http.StatusNotFound, "Note could not be found")
+		httpx.RespondError(w, http.StatusNotFound, "Note could not be found.")
 		return
 	}
 
@@ -45,21 +51,31 @@ func (h *Handler) HandleGetAll(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// func (h *Handler) HandlePost(w http.ResponseWriter, req *http.Request) {
-//
-// 	notes, err := h.service.GetAll(req.Context())
-// 	if err != nil {
-// 		h.logger.Error(fmt.Sprintf("could not fetch Notes"))
-// 		httpx.RespondError(w, http.StatusNotFound, "Note could not be found")
-// 		return
-// 	}
-//
-// 	if err = httpx.RespondJSON(w, http.StatusOK, notes); err != nil {
-// 		h.logger.Error("could not respond with JSON encoding", "notes", notes)
-// 	}
-// }
+func (h *Handler) handleCreate(w http.ResponseWriter, req *http.Request) {
+	var noteReq createNoteRequest
 
-func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
+	if err := json.NewDecoder(req.Body).Decode(&noteReq); err != nil {
+		h.logger.Error(fmt.Sprintf("could not parse Note JSON from request body"))
+		httpx.RespondError(w, http.StatusBadRequest, "Invalid JSON format for Note.")
+		return
+	}
+
+	// TODO validate noteReq with helper
+
+	note, err := h.service.Create(req.Context(), noteReq.Title, noteReq.Content)
+	if err != nil {
+		h.logger.Error(fmt.Sprintf("could not create Note"))
+		httpx.RespondError(w, http.StatusInternalServerError, "Error creating Note.")
+		return
+	}
+
+	if err = httpx.RespondJSON(w, http.StatusOK, note); err != nil {
+		h.logger.Error("could not respond with JSON encoding", "noteID", note.ID, "note", note)
+	}
+
+}
+
+func (h *Handler) handleGetByID(w http.ResponseWriter, req *http.Request) {
 	id, err := h.idFromPath(w, req)
 	if err != nil {
 		return
@@ -68,7 +84,7 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 	note, err := h.service.GetByID(req.Context(), id)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("could not fetch Note with ID `%d`", id))
-		httpx.RespondError(w, http.StatusNotFound, "Note could not be found")
+		httpx.RespondError(w, http.StatusNotFound, "Note could not be found.")
 		return
 	}
 
@@ -77,18 +93,7 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) idFromPath(w http.ResponseWriter, req *http.Request) (int64, error) {
-	idStr := chi.URLParam(req, "noteID")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		h.logger.Error(fmt.Sprintf("could not convert urlParam `%s` noteID to int64", idStr))
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid notesID")
-		return -1, fmt.Errorf("could not extract Note ID from URL query parameters")
-	}
-	return id, nil
-}
-
-func (h *Handler) HandleDeleteByID(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) handleDeleteByID(w http.ResponseWriter, req *http.Request) {
 	id, err := h.idFromPath(w, req)
 	if err != nil {
 		return
@@ -97,7 +102,7 @@ func (h *Handler) HandleDeleteByID(w http.ResponseWriter, req *http.Request) {
 	deleted, err := h.service.DeleteByID(req.Context(), id)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("could not delete Note with ID `%d`", id))
-		httpx.RespondError(w, http.StatusNotFound, "Note could not be deleted")
+		httpx.RespondError(w, http.StatusNotFound, "Note could not be deleted.")
 		return
 	}
 
@@ -111,4 +116,15 @@ func (h *Handler) HandleDeleteByID(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+}
+
+func (h *Handler) idFromPath(w http.ResponseWriter, req *http.Request) (int64, error) {
+	idStr := chi.URLParam(req, "noteID")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.logger.Error(fmt.Sprintf("could not convert urlParam `%s` noteID to int64", idStr))
+		httpx.RespondError(w, http.StatusBadRequest, "Invalid notesID.")
+		return -1, fmt.Errorf("could not extract Note ID from URL query parameters")
+	}
+	return id, nil
 }
