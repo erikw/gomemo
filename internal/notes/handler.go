@@ -60,11 +60,8 @@ func (h *Handler) HandleGetAll(w http.ResponseWriter, req *http.Request) {
 // }
 
 func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
-	idStr := chi.URLParam(req, "noteID")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := h.idFromPath(w, req)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("could not convert urlParam `%s` noteID to int64", idStr))
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid notesID")
 		return
 	}
 
@@ -80,7 +77,7 @@ func (h *Handler) HandleGetByID(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) idFromParam(w http.ResponseWriter, req *http.Request) (int64, error) {
+func (h *Handler) idFromPath(w http.ResponseWriter, req *http.Request) (int64, error) {
 	idStr := chi.URLParam(req, "noteID")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -92,7 +89,7 @@ func (h *Handler) idFromParam(w http.ResponseWriter, req *http.Request) (int64, 
 }
 
 func (h *Handler) HandleDeleteByID(w http.ResponseWriter, req *http.Request) {
-	id, err := h.idFromParam(w, req)
+	id, err := h.idFromPath(w, req)
 	if err != nil {
 		return
 	}

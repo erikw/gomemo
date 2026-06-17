@@ -162,9 +162,9 @@ DELETE /notes/{id}
 
 ## Deliverable
 
-A fully working CRUD API backed only by memory.
-
-No database yet.
+* A fully working CRUD API backed only by memory.
+* No database yet.
+* Autmomated REST request JSON files
 
 ---
 
