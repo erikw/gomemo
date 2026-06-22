@@ -6,6 +6,7 @@ type Storage[O Object] interface {
 	Create(o O) (O, error)
 	All() ([]O, error)
 	FindByID(ID int64) (O, error)
+	InsertWithID(ID int64, o O) (O, error)
 	DeleteByID(ID int64) (bool, error)
 }
 

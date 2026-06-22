@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -18,8 +19,8 @@ type Handler struct {
 }
 
 type createNoteRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
+	Title   *string `json:"title"`
+	Content *string `json:"content"`
 }
 
 func NewHandler(logger *slog.Logger, service *Service) *Handler {
@@ -33,7 +34,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/notes", h.handleGetAll) // TODO pagingate
 	r.Post("/notes", h.handleCreate)
 	r.Get("/notes/{noteID}", h.handleGetByID)
-	// r.Patch("/notes/{noteID}", h.handleUpdateByID)
+	r.Patch("/notes/{noteID}", h.handleUpdateByID)
 	r.Delete("/notes/{noteID}", h.handleDeleteByID)
 }
 
@@ -52,9 +53,20 @@ func (h *Handler) handleGetAll(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) handleCreate(w http.ResponseWriter, req *http.Request) {
-
-	note, err := h.createNoteFromRequest(w, req)
+	noteReq, err := h.noteFromRequest(w, req)
 	if err != nil {
+		return
+	}
+
+	note, err := h.service.Create(req.Context(), *noteReq.Title, *noteReq.Content)
+	if err != nil {
+		h.logger.Error("could not create Note", "error", err.Error())
+		switch {
+		case errors.Is(err, ErrTitleRequired):
+			httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		default:
+			httpx.RespondError(w, http.StatusInternalServerError, "Error creating Note.")
+		}
 		return
 	}
 
@@ -88,24 +100,18 @@ func (h *Handler) handleUpdateByID(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	note, err := h.service.GetByID(req.Context(), id)
+	noteReq, err := h.noteFromRequest(w, req)
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("could not fetch Note with ID `%d`", id))
-		httpx.RespondError(w, http.StatusNotFound, "Note could not be found.")
 		return
 	}
 
-	var noteReq createNoteRequest
-	decoder := json.NewDecoder(req.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&noteReq); err != nil {
-		h.logger.Error("could not parse Note JSON from request body")
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid JSON format for Note.")
+	note, err := h.service.Update(req.Context(), id, noteReq.Title, noteReq.Content)
+	if err != nil {
+		errReq := fmt.Errorf("could not parse save updated Note")
+		h.logger.Error(errReq.Error())
+		httpx.RespondError(w, http.StatusBadRequest, errReq.Error())
 		return
 	}
-
-	// TODO
-	// note.Title =
 
 	if err = httpx.RespondJSON(w, http.StatusOK, note); err != nil {
 		h.logger.Error("could not respond with JSON encoding", "noteID", id, "note", note)
@@ -148,28 +154,19 @@ func (h *Handler) idFromPath(w http.ResponseWriter, req *http.Request) (int64, e
 	return id, nil
 }
 
-func (h *Handler) createNoteFromRequest(w http.ResponseWriter, req *http.Request) (*Note, error) {
+func (h *Handler) noteFromRequest(w http.ResponseWriter, req *http.Request) (createNoteRequest, error) {
 	var noteReq createNoteRequest
 
 	decoder := json.NewDecoder(req.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&noteReq); err != nil {
-		errReq := fmt.Errorf("could not parse Note JSON from request body")
+		if errors.Is(err, io.EOF) {
+			return noteReq, nil
+		}
+		errReq := fmt.Errorf("could not parse Note JSON from request body: %s", err.Error())
 		h.logger.Error(errReq.Error())
 		httpx.RespondError(w, http.StatusBadRequest, "Invalid JSON format for Note.")
-		return nil, errReq
+		return createNoteRequest{}, errReq
 	}
-
-	note, err := h.service.Create(req.Context(), noteReq.Title, noteReq.Content)
-	if err != nil {
-		h.logger.Error("could not create Note", "error", err.Error())
-		switch {
-		case errors.Is(err, ErrTitleRequired):
-			httpx.RespondError(w, http.StatusBadRequest, err.Error())
-		default:
-			httpx.RespondError(w, http.StatusInternalServerError, "Error creating Note.")
-		}
-		return nil, err
-	}
-	return note, nil
+	return noteReq, nil
 }

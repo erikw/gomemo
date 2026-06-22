@@ -41,6 +41,16 @@ func (m *Memory[O]) FindByID(ID int64) (O, error) {
 	}
 }
 
+func (m *Memory[O]) InsertWithID(ID int64, o O) (O, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// m.logger.Debug(fmt.Sprintf("Inserting with ID %d obj %v", ID, o))
+	m.store[ID] = o
+
+	return o, nil
+}
+
 func (m *Memory[O]) DeleteByID(ID int64) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

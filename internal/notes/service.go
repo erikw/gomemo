@@ -33,51 +33,44 @@ func NewService(logger *slog.Logger, store storage.Storage[*Note]) *Service {
 	}
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]Note, error) {
+func (s *Service) GetAll(ctx context.Context) ([]*Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 
-	var notePtrs []*Note
+	var notes []*Note
 	var err error
-	if notePtrs, err = s.store.All(); err != nil {
+	if notes, err = s.store.All(); err != nil {
 		s.logger.Error("could not retrieve all Notes")
-		return make([]Note, 0, 0), err
-	}
-
-	notes := make([]Note, 0, len(notePtrs))
-	for _, note := range notePtrs {
-		if note == nil {
-			continue
-		}
-		notes = append(notes, *note)
+		return make([]*Note, 0), err
 	}
 
 	return notes, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
+func (s *Service) GetByID(ctx context.Context, ID int64) (*Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 	var note *Note
 	var err error
 	if note, err = s.store.FindByID(ID); err != nil {
 		s.logger.Error(fmt.Sprintf("could not find Note with ID %d", ID))
-		return Note{}, err
+		return &Note{}, err
 	}
 
-	return *note, nil
+	return note, nil
 }
 
 func (s *Service) Create(ctx context.Context, title string, content string) (*Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
-
-	if strings.TrimSpace(title) == "" {
-		return &Note{}, ErrTitleRequired
-	}
 
 	note := &Note{
 		Title:      title,
 		Content:    content,
 		CreatedAt:  time.Now(),
 		ModifiedAt: time.Now(),
+	}
+
+	if err := s.validate(note); err != nil {
+		s.logger.Warn(fmt.Sprintf("Note is not valid: %s", err.Error()))
+		return nil, err
 	}
 
 	var createdNote *Note
@@ -88,6 +81,48 @@ func (s *Service) Create(ctx context.Context, title string, content string) (*No
 	}
 
 	return createdNote, nil
+}
+
+func (s *Service) Update(ctx context.Context, ID int64, title *string, content *string) (*Note, error) {
+
+	note, err := s.GetByID(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	modified := false
+	if title != nil && *title != note.Title {
+		note.Title = *title
+		modified = true
+	}
+	if content != nil && *content != note.Content {
+		note.Content = *content
+		modified = true
+	}
+	if modified {
+		note.ModifiedAt = time.Now()
+	}
+
+	if err := s.validate(note); err != nil {
+		s.logger.Warn(fmt.Sprintf("Note is not valid: %s", err.Error()))
+		return nil, err
+	}
+
+	note, err = s.store.InsertWithID(ID, note)
+	if err != nil {
+		s.logger.Warn(fmt.Sprintf("Could not update Note by ID: %s", err.Error()))
+		return nil, err
+	}
+
+	return note, nil
+}
+
+// TODO in Go design, keep this in service or Note itself?
+func (s *Service) validate(note *Note) error {
+	if strings.TrimSpace(note.Title) == "" {
+		return ErrTitleRequired
+	}
+	return nil
 }
 
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
