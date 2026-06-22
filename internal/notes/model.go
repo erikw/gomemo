@@ -13,6 +13,15 @@ type Note struct {
 	ModifiedAt time.Time `json:"modified_at"`
 }
 
-func (n Note) String() string {
+func (n *Note) String() string {
 	return fmt.Sprintf("Note{id=%d, title=%q}", n.ID, n.Title)
+}
+
+func (n *Note) GetID() int64 {
+	return n.ID
+}
+
+func (n *Note) SetID(ID int64) error {
+	n.ID = ID
+	return nil
 }

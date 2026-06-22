@@ -2,9 +2,18 @@ package storage
 
 // TODO all funcs should take context as first arg
 // TODO cant use `any`, we need interface that they have an ID.
-type Storage[T any] interface {
-	Create(t T) (T, error)
-	All() ([]T, error)
-	FindByID(id int64) (T, error)
-	DeleteByID(id int64) (bool, error)
+type Storage[O Object] interface {
+	Create(o O) (O, error)
+	All() ([]O, error)
+	FindByID(ID int64) (O, error)
+	DeleteByID(ID int64) (bool, error)
+}
+
+type Identifiable interface {
+	GetID() int64
+	SetID(ID int64) error
+}
+
+type Object interface {
+	Identifiable
 }

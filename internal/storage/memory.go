@@ -3,40 +3,48 @@ package storage
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 )
 
-type Memory[T any] struct {
+type Memory[O Object] struct {
 	logger *slog.Logger
-	store  map[int64]T
+	store  map[int64]O
+	mu     sync.Mutex
+	nextID int64
 }
 
-func NewMemory[T any](logger *slog.Logger) *Memory[T] {
-	return &Memory[T]{
+func NewMemory[O Object](logger *slog.Logger) *Memory[O] {
+	return &Memory[O]{
 		logger: logger,
-		store:  make(map[int64]T),
+		store:  make(map[int64]O),
+		nextID: 0,
 	}
 }
 
-func (m *Memory[T]) Create(t T) (T, error) {
-	// TODO right way is to have interface requiring each storage element to have an ID?
-	// e := t
-	// e.ID = 5
-	// m.store[e.ID] = t // TODO helper to get nextID from last/next ID, mutex
-	// return e, nil
+func (m *Memory[O]) Create(o O) (O, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	m.store[5] = t
-	return t, nil
+	_ = o.SetID(m.nextID)
+	m.store[m.nextID] = o
+
+	m.nextID++
+
+	return o, nil
 }
 
-func (m *Memory[T]) FindByID(ID int64) (T, error) {
-	if e, ok := m.store[ID]; ok {
-		return e, nil
+func (m *Memory[O]) FindByID(ID int64) (O, error) {
+	if o, ok := m.store[ID]; ok {
+		return o, nil
 	} else {
-		return *new(T), fmt.Errorf("could not find element with ID `%d`", ID)
+		return *new(O), fmt.Errorf("could not find element with ID `%d`", ID)
 	}
 }
 
-func (m *Memory[T]) DeleteByID(ID int64) (bool, error) {
+func (m *Memory[O]) DeleteByID(ID int64) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if _, ok := m.store[ID]; ok {
 		delete(m.store, ID)
 		return true, nil
@@ -45,11 +53,11 @@ func (m *Memory[T]) DeleteByID(ID int64) (bool, error) {
 	}
 }
 
-func (m *Memory[T]) All() ([]T, error) {
-	var elems = make([]T, 0, len(m.store))
+func (m *Memory[O]) All() ([]O, error) {
+	var objs = make([]O, 0, len(m.store))
 
-	for _, e := range m.store {
-		elems = append(elems, e)
+	for _, o := range m.store {
+		objs = append(objs, o)
 	}
-	return elems, nil
+	return objs, nil
 }

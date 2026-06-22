@@ -46,7 +46,8 @@ func main() {
 	logger.Info("Starting Gomemo.", "config", cfg)
 	router := api.NewRouter(logger, cfg)
 
-	notesStore := storage.NewMemory[notes.Note](logger)
+	// TODO storage should be confgurable from env/file.
+	notesStore := storage.NewMemory[*notes.Note](logger)
 	notesService := notes.NewService(logger, notesStore)
 	notesHandler := notes.NewHandler(logger, notesService)
 	notesHandler.RegisterRoutes(router.ChiRouter()) // TODO should we not have an interface for a Handler with method RegisterRoutes?
