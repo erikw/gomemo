@@ -66,11 +66,11 @@ func (s *Service) GetByID(ctx context.Context, ID int64) (Note, error) {
 	return *note, nil
 }
 
-func (s *Service) Create(ctx context.Context, title string, content string) (Note, error) {
+func (s *Service) Create(ctx context.Context, title string, content string) (*Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 
 	if strings.TrimSpace(title) == "" {
-		return Note{}, ErrTitleRequired
+		return &Note{}, ErrTitleRequired
 	}
 
 	note := &Note{
@@ -84,10 +84,10 @@ func (s *Service) Create(ctx context.Context, title string, content string) (Not
 	var err error
 	if createdNote, err = s.store.Create(note); err != nil {
 		s.logger.Error("could not create a new Note in storage")
-		return Note{}, err
+		return &Note{}, err
 	}
 
-	return *createdNote, nil
+	return createdNote, nil
 }
 
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
