@@ -8,10 +8,12 @@ import (
 
 const defaultHost = "127.0.0.1"
 const defaultPort = "8080"
+const defaultEnv = "prod"
 
 type Config struct {
 	Host string
 	Port string
+	Env  string
 }
 
 func Load() (Config, error) {
@@ -25,9 +27,15 @@ func Load() (Config, error) {
 		port = defaultPort
 	}
 
+	env := strings.TrimSpace(os.Getenv("ENV"))
+	if env == "" {
+		env = defaultEnv
+	}
+
 	return Config{
-		Port: port,
 		Host: host,
+		Port: port,
+		Env:  env,
 	}, nil
 }
 

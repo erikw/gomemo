@@ -15,14 +15,6 @@ type Service struct {
 }
 
 func NewService(logger *slog.Logger, store storage.Storage[*Note]) *Service {
-	// TODO hard code else where. Implement fixtures from YAML or such.
-	_, _ = store.Create(nil, &Note{
-		Title:      "Title of note",
-		Content:    "Some content string here",
-		CreatedAt:  time.Now(),
-		ModifiedAt: time.Now(),
-	})
-
 	return &Service{
 		logger: logger,
 		store:  store,

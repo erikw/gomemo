@@ -8,6 +8,7 @@ import (
 	"github.com/erikw/gomemo/internal/api"
 	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/notes"
+	"github.com/erikw/gomemo/internal/seed"
 	"github.com/erikw/gomemo/internal/storage"
 	"github.com/erikw/gomemo/internal/version"
 )
@@ -48,6 +49,16 @@ func main() {
 
 	// TODO storage should be confgurable from env/file.
 	notesStore := storage.NewMemory[*notes.Note](logger)
+
+	// Seed database in dev mode
+	if cfg.Env == "dev" {
+		fixturesPath := "data/dev.yaml"
+		if err := seed.Load(logger, fixturesPath, notesStore); err != nil {
+			logger.Error(fmt.Sprintf("Error seeding database: %v", err.Error()))
+			os.Exit(1)
+		}
+	}
+
 	notesService := notes.NewService(logger, notesStore)
 	notesHandler := notes.NewHandler(logger, notesService)
 	notesHandler.RegisterRoutes(router.ChiRouter()) // TODO should we not have an interface for a Handler with method RegisterRoutes?
