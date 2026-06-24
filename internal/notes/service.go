@@ -2,16 +2,12 @@ package notes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/erikw/gomemo/internal/storage"
 )
-
-var ErrTitleRequired = errors.New("the field Title is required")
 
 type Service struct {
 	logger *slog.Logger
@@ -63,7 +59,7 @@ func (s *Service) Create(ctx context.Context, title string, content string) (*No
 		ModifiedAt: time.Now(),
 	}
 
-	if err := s.validate(note); err != nil {
+	if err := note.Validate(); err != nil {
 		s.logger.Warn(fmt.Sprintf("Note is not valid: %s", err.Error()))
 		return nil, err
 	}
@@ -98,7 +94,7 @@ func (s *Service) Update(ctx context.Context, ID int64, title *string, content *
 		note.ModifiedAt = time.Now()
 	}
 
-	if err := s.validate(note); err != nil {
+	if err := note.Validate(); err != nil {
 		s.logger.Warn(fmt.Sprintf("Note is not valid: %s", err.Error()))
 		return nil, err
 	}
@@ -110,14 +106,6 @@ func (s *Service) Update(ctx context.Context, ID int64, title *string, content *
 	}
 
 	return note, nil
-}
-
-// TODO in Go design, keep this in service or Note itself?
-func (s *Service) validate(note *Note) error {
-	if strings.TrimSpace(note.Title) == "" {
-		return ErrTitleRequired
-	}
-	return nil
 }
 
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
