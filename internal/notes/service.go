@@ -34,8 +34,6 @@ func NewService(logger *slog.Logger, store storage.Storage[*Note]) *Service {
 }
 
 func (s *Service) GetAll(ctx context.Context) ([]*Note, error) {
-	// TODO pass ctx to DB. Set custom timeout?
-
 	var notes []*Note
 	var err error
 	if notes, err = s.store.All(ctx); err != nil {
@@ -47,7 +45,6 @@ func (s *Service) GetAll(ctx context.Context) ([]*Note, error) {
 }
 
 func (s *Service) GetByID(ctx context.Context, ID int64) (*Note, error) {
-	// TODO pass ctx to DB. Set custom timeout?
 	var note *Note
 	var err error
 	if note, err = s.store.FindByID(ctx, ID); err != nil {
@@ -59,8 +56,6 @@ func (s *Service) GetByID(ctx context.Context, ID int64) (*Note, error) {
 }
 
 func (s *Service) Create(ctx context.Context, title string, content string) (*Note, error) {
-	// TODO pass ctx to DB. Set custom timeout?
-
 	note := &Note{
 		Title:      title,
 		Content:    content,
@@ -126,8 +121,6 @@ func (s *Service) validate(note *Note) error {
 }
 
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
-	// TODO pass ctx to DB. Set custom timeout?
-
 	deleted, err := s.store.DeleteByID(ctx, ID)
 	if err != nil {
 		s.logger.Error("could not create a new Note in storage")
