@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -21,7 +22,7 @@ func NewMemory[O Object](logger *slog.Logger) *Memory[O] {
 	}
 }
 
-func (m *Memory[O]) Create(o O) (O, error) {
+func (m *Memory[O]) Create(ctx context.Context, o O) (O, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -33,7 +34,7 @@ func (m *Memory[O]) Create(o O) (O, error) {
 	return o, nil
 }
 
-func (m *Memory[O]) FindByID(ID int64) (O, error) {
+func (m *Memory[O]) FindByID(ctx context.Context, ID int64) (O, error) {
 	if o, ok := m.store[ID]; ok {
 		return o, nil
 	} else {
@@ -41,7 +42,7 @@ func (m *Memory[O]) FindByID(ID int64) (O, error) {
 	}
 }
 
-func (m *Memory[O]) InsertWithID(ID int64, o O) (O, error) {
+func (m *Memory[O]) InsertWithID(ctx context.Context, ID int64, o O) (O, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -51,7 +52,7 @@ func (m *Memory[O]) InsertWithID(ID int64, o O) (O, error) {
 	return o, nil
 }
 
-func (m *Memory[O]) DeleteByID(ID int64) (bool, error) {
+func (m *Memory[O]) DeleteByID(ctx context.Context, ID int64) (bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -63,7 +64,7 @@ func (m *Memory[O]) DeleteByID(ID int64) (bool, error) {
 	}
 }
 
-func (m *Memory[O]) All() ([]O, error) {
+func (m *Memory[O]) All(ctx context.Context) ([]O, error) {
 	var objs = make([]O, 0, len(m.store))
 
 	for _, o := range m.store {

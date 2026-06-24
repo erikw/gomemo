@@ -20,7 +20,7 @@ type Service struct {
 
 func NewService(logger *slog.Logger, store storage.Storage[*Note]) *Service {
 	// TODO hard code else where. Implement fixtures from YAML or such.
-	_, _ = store.Create(&Note{
+	_, _ = store.Create(nil, &Note{
 		Title:      "Title of note",
 		Content:    "Some content string here",
 		CreatedAt:  time.Now(),
@@ -38,7 +38,7 @@ func (s *Service) GetAll(ctx context.Context) ([]*Note, error) {
 
 	var notes []*Note
 	var err error
-	if notes, err = s.store.All(); err != nil {
+	if notes, err = s.store.All(ctx); err != nil {
 		s.logger.Error("could not retrieve all Notes")
 		return make([]*Note, 0), err
 	}
@@ -50,7 +50,7 @@ func (s *Service) GetByID(ctx context.Context, ID int64) (*Note, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 	var note *Note
 	var err error
-	if note, err = s.store.FindByID(ID); err != nil {
+	if note, err = s.store.FindByID(ctx, ID); err != nil {
 		s.logger.Error(fmt.Sprintf("could not find Note with ID %d", ID))
 		return &Note{}, err
 	}
@@ -75,7 +75,7 @@ func (s *Service) Create(ctx context.Context, title string, content string) (*No
 
 	var createdNote *Note
 	var err error
-	if createdNote, err = s.store.Create(note); err != nil {
+	if createdNote, err = s.store.Create(ctx, note); err != nil {
 		s.logger.Error("could not create a new Note in storage")
 		return &Note{}, err
 	}
@@ -108,7 +108,7 @@ func (s *Service) Update(ctx context.Context, ID int64, title *string, content *
 		return nil, err
 	}
 
-	note, err = s.store.InsertWithID(ID, note)
+	note, err = s.store.InsertWithID(ctx, ID, note)
 	if err != nil {
 		s.logger.Warn(fmt.Sprintf("Could not update Note by ID: %s", err.Error()))
 		return nil, err
@@ -128,7 +128,7 @@ func (s *Service) validate(note *Note) error {
 func (s *Service) DeleteByID(ctx context.Context, ID int64) (bool, error) {
 	// TODO pass ctx to DB. Set custom timeout?
 
-	deleted, err := s.store.DeleteByID(ID)
+	deleted, err := s.store.DeleteByID(ctx, ID)
 	if err != nil {
 		s.logger.Error("could not create a new Note in storage")
 	}
