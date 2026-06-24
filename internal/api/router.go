@@ -11,6 +11,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// Router wraps the chi router and manages HTTP routes and middleware.
+// Handlers are registered by implementing the RouteRegistrar interface.
 type Router struct {
 	logger    *slog.Logger
 	config    config.Config

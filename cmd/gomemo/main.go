@@ -50,7 +50,8 @@ func main() {
 	// TODO storage should be confgurable from env/file.
 	notesStore := storage.NewMemory[*notes.Note](logger)
 
-	// Seed database in dev mode
+	// Seed database in dev mode.
+	// TODO extract this to a cli command `$ gomemo seed`?
 	if cfg.Env == "dev" {
 		fixturesPath := "data/dev.yaml"
 		if err := seed.Load(logger, fixturesPath, notesStore); err != nil {
@@ -61,7 +62,15 @@ func main() {
 
 	notesService := notes.NewService(logger, notesStore)
 	notesHandler := notes.NewHandler(logger, notesService)
-	notesHandler.RegisterRoutes(router.ChiRouter()) // TODO should we not have an interface for a Handler with method RegisterRoutes?
+
+	// Register all handlers that implement RouteRegistrar
+	handlers := []api.RouteRegistrar{
+		notesHandler,
+		// Future handlers (auth, users, etc.) can be added here
+	}
+	for _, h := range handlers {
+		h.RegisterRoutes(router.ChiRouter())
+	}
 
 	router.RunServer()
 }
