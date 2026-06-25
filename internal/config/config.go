@@ -9,11 +9,13 @@ import (
 const defaultHost = "127.0.0.1"
 const defaultPort = "8080"
 const defaultEnv = "prod"
+const defaultStorageType = "memory"
 
 type Config struct {
-	Host string
-	Port string
-	Env  string
+	Host        string
+	Port        string
+	Env         string
+	StorageType string
 }
 
 func Load() (Config, error) {
@@ -32,10 +34,16 @@ func Load() (Config, error) {
 		env = defaultEnv
 	}
 
+	storageType := strings.TrimSpace(os.Getenv("STORAGE_TYPE"))
+	if storageType == "" {
+		storageType = defaultStorageType
+	}
+
 	return Config{
-		Host: host,
-		Port: port,
-		Env:  env,
+		Host:        host,
+		Port:        port,
+		Env:         env,
+		StorageType: storageType,
 	}, nil
 }
 
@@ -46,4 +54,8 @@ func (cfg Config) String() string {
 
 func (cfg Config) AddrString() string {
 	return fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+}
+
+func (cfg Config) IsMemoryStorage() bool {
+	return cfg.StorageType == "memory"
 }
