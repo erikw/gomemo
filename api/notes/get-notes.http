@@ -1,0 +1,3 @@
+### Get all notes
+GET {{BASE_URL}}/notes
+Accept: application/json

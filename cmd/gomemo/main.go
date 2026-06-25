@@ -1,4 +1,3 @@
-// TODO add JSON curl requests
 package main
 
 import (

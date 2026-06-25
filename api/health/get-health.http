@@ -1,0 +1,7 @@
+### Get server health via root endpoint
+GET {{BASE_URL}}/
+Accept: application/json
+
+### Get server health via explicit health endpoint
+GET {{BASE_URL}}/health
+Accept: application/json

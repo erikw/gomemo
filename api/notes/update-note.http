@@ -1,0 +1,27 @@
+### Update note by ID (happy path)
+PATCH {{BASE_URL}}/notes/{{NOTE_ID}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Updated note title",
+  "content": "Updated from api/notes/update-note.http"
+}
+
+### Update note with empty title (expected 400)
+PATCH {{BASE_URL}}/notes/{{NOTE_ID}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "   "
+}
+
+### Update note with invalid ID format (expected 400)
+PATCH {{BASE_URL}}/notes/not-a-number
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Will not be parsed because ID is invalid"
+}

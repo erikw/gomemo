@@ -1,0 +1,28 @@
+### Create note (happy path)
+POST {{BASE_URL}}/notes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Manual test note",
+  "content": "Created from api/notes/create-note.http"
+}
+
+### Create note without title (expected 400)
+POST {{BASE_URL}}/notes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "content": "Missing title should fail validation"
+}
+
+### Create note with invalid JSON (expected 400)
+POST {{BASE_URL}}/notes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Broken JSON",
+  "content": "Missing closing quote
+}

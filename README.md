@@ -67,6 +67,37 @@ go run ./cmd/gomemo -debug
 make test
 ```
 
+### Manual API Testing (`.http` files)
+
+Shared `.http` request collections are available under `api/`, similar to a Postman collection but versioned in git.
+
+1. Install the HTTP client tool:
+
+```bash
+npm install
+```
+
+2. Start the API server (recommended in dev mode so fixture notes are available):
+
+```bash
+ENV=dev go run ./cmd/gomemo
+```
+
+3. Run a single request file:
+
+```bash
+npx httpyac --env dev send -a api/notes/get-notes.http
+```
+
+4. Run all request files:
+
+```bash
+npx httpyac --env dev send -a "api/**/*.http"
+```
+
+`BASE_URL`, `NOTE_ID`, and `MISSING_NOTE_ID` are configured in `.httpyac.js`.
+Some requests are intentionally negative test cases and are expected to return `400`/`404`.
+
 ## Installation
 
 Install globally:

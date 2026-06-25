@@ -33,3 +33,4 @@ go.work.sum
 
 /gomemo
 /tmp
+node_modules/

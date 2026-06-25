@@ -1,0 +1,11 @@
+### Delete existing note by ID (happy path, expected 204)
+DELETE {{BASE_URL}}/notes/{{NOTE_ID}}
+Accept: application/json
+
+### Delete note by non-existing ID (expected 404)
+DELETE {{BASE_URL}}/notes/{{MISSING_NOTE_ID}}
+Accept: application/json
+
+### Delete note with invalid ID format (expected 400)
+DELETE {{BASE_URL}}/notes/not-a-number
+Accept: application/json
