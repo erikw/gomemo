@@ -32,6 +32,26 @@ func (s *Service) GetAll(ctx context.Context) ([]*Note, error) {
 	return notes, nil
 }
 
+func (s *Service) GetAllPaginated(ctx context.Context, limit int, offset int) ([]*Note, int64, error) {
+	notes, err := s.GetAll(ctx)
+	if err != nil {
+		return make([]*Note, 0), 0, err
+	}
+
+	total := int64(len(notes))
+	
+	if offset >= len(notes) {
+		return make([]*Note, 0), total, nil
+	}
+
+	end := offset + limit
+	if end > len(notes) {
+		end = len(notes)
+	}
+
+	return notes[offset:end], total, nil
+}
+
 func (s *Service) GetByID(ctx context.Context, ID int64) (*Note, error) {
 	var note *Note
 	var err error

@@ -23,6 +23,14 @@ type createNoteRequest struct {
 	Content *string `json:"content"`
 }
 
+type paginatedNotesResponse struct {
+	Data       []*Note `json:"data"`
+	Total      int64   `json:"total"`
+	Limit      int     `json:"limit"`
+	Offset     int     `json:"offset"`
+	HasMore    bool    `json:"has_more"`
+}
+
 func NewHandler(logger *slog.Logger, service *Service) *Handler {
 	return &Handler{
 		logger:  logger,
@@ -31,7 +39,7 @@ func NewHandler(logger *slog.Logger, service *Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
-	r.Get("/notes", h.handleGetAll) // TODO pagingate
+	r.Get("/notes", h.handleGetAll)
 	r.Post("/notes", h.handleCreate)
 	r.Get("/notes/{noteID}", h.handleGetByID)
 	r.Patch("/notes/{noteID}", h.handleUpdateByID)
@@ -39,15 +47,30 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 }
 
 func (h *Handler) handleGetAll(w http.ResponseWriter, req *http.Request) {
-
-	notes, err := h.service.GetAll(req.Context())
+	limit, offset, err := h.paginationParams(req)
 	if err != nil {
-		h.logger.Error("could not fetch Notes")
-		httpx.RespondError(w, http.StatusNotFound, "Note could not be found.")
+		h.logger.Error("invalid pagination parameters", "error", err.Error())
+		httpx.RespondError(w, http.StatusBadRequest, "Invalid pagination parameters.")
 		return
 	}
 
-	if err = httpx.RespondJSON(w, http.StatusOK, notes); err != nil {
+	notes, total, err := h.service.GetAllPaginated(req.Context(), limit, offset)
+	if err != nil {
+		h.logger.Error("could not fetch Notes", "error", err.Error())
+		httpx.RespondError(w, http.StatusInternalServerError, "Notes could not be fetched.")
+		return
+	}
+
+	hasMore := int64(offset+limit) < total
+	resp := paginatedNotesResponse{
+		Data:    notes,
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
+		HasMore: hasMore,
+	}
+
+	if err = httpx.RespondJSON(w, http.StatusOK, resp); err != nil {
 		h.logger.Error("could not respond with JSON encoding", "notes", notes)
 	}
 }
@@ -152,6 +175,42 @@ func (h *Handler) idFromPath(w http.ResponseWriter, req *http.Request) (int64, e
 		return -1, fmt.Errorf("could not extract Note ID from URL query parameters")
 	}
 	return id, nil
+}
+
+func (h *Handler) paginationParams(req *http.Request) (limit int, offset int, err error) {
+	const (
+		defaultLimit = 10
+		maxLimit     = 100
+	)
+
+	limitStr := req.URL.Query().Get("limit")
+	if limitStr == "" {
+		limit = defaultLimit
+	} else {
+		var parsedLimit int
+		parsedLimit, err = strconv.Atoi(limitStr)
+		if err != nil || parsedLimit < 1 {
+			return 0, 0, fmt.Errorf("limit must be a positive integer")
+		}
+		if parsedLimit > maxLimit {
+			parsedLimit = maxLimit
+		}
+		limit = parsedLimit
+	}
+
+	offsetStr := req.URL.Query().Get("offset")
+	if offsetStr == "" {
+		offset = 0
+	} else {
+		var parsedOffset int
+		parsedOffset, err = strconv.Atoi(offsetStr)
+		if err != nil || parsedOffset < 0 {
+			return 0, 0, fmt.Errorf("offset must be a non-negative integer")
+		}
+		offset = parsedOffset
+	}
+
+	return limit, offset, nil
 }
 
 func (h *Handler) noteFromRequest(w http.ResponseWriter, req *http.Request) (createNoteRequest, error) {
