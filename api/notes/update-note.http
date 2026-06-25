@@ -1,5 +1,5 @@
 ### Update note by ID (happy path)
-PATCH {{BASE_URL}}/notes/{{NOTE_ID}}
+PATCH {{BASE_URL}}/api/v1/notes/{{NOTE_ID}}
 Content-Type: application/json
 Accept: application/json
 
@@ -9,7 +9,7 @@ Accept: application/json
 }
 
 ### Update note with empty title (expected 400)
-PATCH {{BASE_URL}}/notes/{{NOTE_ID}}
+PATCH {{BASE_URL}}/api/v1/notes/{{NOTE_ID}}
 Content-Type: application/json
 Accept: application/json
 
@@ -18,7 +18,7 @@ Accept: application/json
 }
 
 ### Update note with invalid ID format (expected 400)
-PATCH {{BASE_URL}}/notes/not-a-number
+PATCH {{BASE_URL}}/api/v1/notes/not-a-number
 Content-Type: application/json
 Accept: application/json
 

@@ -1,5 +1,5 @@
 ### Create note (happy path)
-POST {{BASE_URL}}/notes
+POST {{BASE_URL}}/api/v1/notes
 Content-Type: application/json
 Accept: application/json
 
@@ -9,7 +9,7 @@ Accept: application/json
 }
 
 ### Create note without title (expected 400)
-POST {{BASE_URL}}/notes
+POST {{BASE_URL}}/api/v1/notes
 Content-Type: application/json
 Accept: application/json
 
@@ -18,7 +18,7 @@ Accept: application/json
 }
 
 ### Create note with invalid JSON (expected 400)
-POST {{BASE_URL}}/notes
+POST {{BASE_URL}}/api/v1/notes
 Content-Type: application/json
 Accept: application/json
 

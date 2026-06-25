@@ -1,11 +1,11 @@
 ### Get existing note by ID (seeded in ENV=dev)
-GET {{BASE_URL}}/notes/{{NOTE_ID}}
+GET {{BASE_URL}}/api/v1/notes/{{NOTE_ID}}
 Accept: application/json
 
 ### Get note by non-existing ID (expected 404)
-GET {{BASE_URL}}/notes/{{MISSING_NOTE_ID}}
+GET {{BASE_URL}}/api/v1/notes/{{MISSING_NOTE_ID}}
 Accept: application/json
 
 ### Get note with invalid ID format (expected 400)
-GET {{BASE_URL}}/notes/not-a-number
+GET {{BASE_URL}}/api/v1/notes/not-a-number
 Accept: application/json

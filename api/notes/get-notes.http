@@ -1,15 +1,15 @@
 ### Get all notes (default pagination)
-GET {{BASE_URL}}/notes
+GET {{BASE_URL}}/api/v1/notes
 Accept: application/json
 
 ### Get notes with custom limit
-GET {{BASE_URL}}/notes?limit=20
+GET {{BASE_URL}}/api/v1/notes?limit=20
 Accept: application/json
 
 ### Get notes with custom offset and limit
-GET {{BASE_URL}}/notes?limit=10&offset=20
+GET {{BASE_URL}}/api/v1/notes?limit=10&offset=20
 Accept: application/json
 
 ### Get notes with large limit (capped at 100)
-GET {{BASE_URL}}/notes?limit=200
+GET {{BASE_URL}}/api/v1/notes?limit=200
 Accept: application/json

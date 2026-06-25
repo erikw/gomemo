@@ -14,6 +14,27 @@ A lightweight note-taking API server written in Go with a clean, modular archite
 - **Structured Logging** using Go's standard `slog` package
 - **Development Tools** with live reload via [air](https://github.com/air-verse/air)
 
+## API Versioning
+
+The API uses semantic versioning via URL path prefixes to support multiple versions simultaneously:
+
+- **Resource Endpoints**: All business logic routes are versioned under `/api/v1/` (e.g., `GET /api/v1/notes`)
+- **Health/Monitoring Endpoints**: Remain unversioned at the root level (`/health`, `/`) to ensure monitoring doesn't break across API versions
+- **Future-Proof Design**: New versions can be introduced (e.g., `/api/v2/`) without affecting existing clients
+
+### API v1 Endpoints
+
+- `GET /api/v1/notes` - List all notes (with pagination)
+- `POST /api/v1/notes` - Create a new note
+- `GET /api/v1/notes/{noteID}` - Get a specific note
+- `PATCH /api/v1/notes/{noteID}` - Update a note
+- `DELETE /api/v1/notes/{noteID}` - Delete a note
+
+### Monitoring Endpoints
+
+- `GET /health` - Server health check
+- `GET /` - Server health check (alias)
+
 ## Quick Start
 
 ### Prerequisites

@@ -63,14 +63,9 @@ func main() {
 	notesService := notes.NewService(logger, notesStore)
 	notesHandler := notes.NewHandler(logger, notesService)
 
-	// Register all handlers that implement RouteRegistrar
-	handlers := []api.RouteRegistrar{
-		notesHandler,
-		// Future handlers (auth, users, etc.) can be added here
-	}
-	for _, h := range handlers {
-		h.RegisterRoutes(router.ChiRouter())
-	}
+	// Register all handlers under /api/v1
+	router.RegisterV1Routes(notesHandler)
+	// Future handlers (auth, users, etc.) can be added here
 
 	router.RunServer()
 }
