@@ -35,6 +35,10 @@ func Load(logger *slog.Logger, fixturesPath string, store storage.Storage[*notes
 	}
 
 	ctx := context.Background()
+	if err := store.Clear(ctx); err != nil {
+		return fmt.Errorf("failed to clear existing data before seed: %w", err)
+	}
+
 	now := time.Now()
 	for i, n := range f.Notes {
 		time := now.Add(-time.Duration(len(f.Notes)-i) * time.Hour)

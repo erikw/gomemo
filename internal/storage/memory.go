@@ -72,3 +72,12 @@ func (m *Memory[O]) All(ctx context.Context) ([]O, error) {
 	}
 	return objs, nil
 }
+
+func (m *Memory[O]) Clear(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.store = make(map[int64]O)
+	m.nextID = 0
+	return nil
+}

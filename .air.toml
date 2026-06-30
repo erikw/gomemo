@@ -1,6 +1,6 @@
 #:schema https://json.schemastore.org/any.json
 
-env_files = []
+env_files = [".env"]
 root = "."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
@@ -16,7 +16,7 @@ tmp_dir = "tmp"
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
   follow_symlink = false
-  full_bin = "ENV=dev STORAGE=memory ./tmp/gomemo -d serve"
+  full_bin = "ENV=dev STORAGE_TYPE=postgres ./tmp/gomemo -d serve"
   ignore_dangerous_root_dir = false
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
@@ -26,7 +26,7 @@ tmp_dir = "tmp"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = ["ENV=dev STORAGE=memory ./tmp/gomemo -d seed"]
+  pre_cmd = ["make migrate-up", "ENV=dev STORAGE_TYPE=postgres make seed"]
   rerun = false
   rerun_delay = 500
   send_interrupt = false

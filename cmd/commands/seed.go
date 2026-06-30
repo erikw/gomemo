@@ -3,9 +3,8 @@ package commands
 import (
 	"fmt"
 
-	"github.com/erikw/gomemo/internal/notes"
+	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/seed"
-	"github.com/erikw/gomemo/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +16,18 @@ var seedCmd = &cobra.Command{
 		logger := GetLogger()
 		logger.Info("Starting seed command")
 
-		// Initialize storage
-		store := storage.NewMemory[*notes.Note](logger)
+		cfg, err := config.Load()
+		if err != nil {
+			logger.Error(fmt.Sprintf("Error loading configuration: %v", err.Error()))
+			return err
+		}
+
+		store, cleanup, err := initializeNotesStore(logger, cfg)
+		if err != nil {
+			logger.Error("Error initializing storage", "error", err.Error(), "storageType", cfg.StorageType)
+			return err
+		}
+		defer cleanup()
 
 		// Load fixtures from dev.yaml
 		fixturesPath := "data/dev.yaml"

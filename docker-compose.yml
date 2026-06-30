@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: gomemo-postgres
+    environment:
+      POSTGRES_USER: gomemo
+      POSTGRES_PASSWORD: gomemo
+      POSTGRES_DB: gomemo
+    ports:
+      - "5432:5432"
+    volumes:
+      - gomemo-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gomemo -d gomemo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  gomemo-postgres-data:

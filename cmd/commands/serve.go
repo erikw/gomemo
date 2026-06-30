@@ -7,7 +7,6 @@ import (
 	"github.com/erikw/gomemo/internal/config"
 	"github.com/erikw/gomemo/internal/notes"
 	"github.com/erikw/gomemo/internal/seed"
-	"github.com/erikw/gomemo/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -29,8 +28,12 @@ var serveCmd = &cobra.Command{
 		logger.Info("Starting Gomemo.", "config", cfg)
 		router := api.NewRouter(logger, cfg)
 
-		// Initialize storage
-		notesStore := storage.NewMemory[*notes.Note](logger)
+		notesStore, cleanup, err := initializeNotesStore(logger, cfg)
+		if err != nil {
+			logger.Error("Error initializing storage", "error", err.Error(), "storageType", cfg.StorageType)
+			return err
+		}
+		defer cleanup()
 
 		// For in-memory storage, auto-seed fixtures on every run
 		if cfg.IsMemoryStorage() {

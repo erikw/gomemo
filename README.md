@@ -7,88 +7,185 @@ A lightweight note-taking API server written in Go with a clean, modular archite
 
 ## Features
 
-- **RESTful API** for note management built with [chi](https://github.com/go-chi/chi)
-- **Clean Architecture** with separation of concerns (handlers, services, storage)
-- **Pluggable Storage** with in-memory storage engine (ready for extensibility)
-- **Environment Configuration** with support for dev and production modes
-- **Structured Logging** using Go's standard `slog` package
-- **Development Tools** with live reload via [air](https://github.com/air-verse/air)
+- RESTful notes API built with [chi](https://github.com/go-chi/chi)
+- Pluggable storage backends:
+  - `memory` (default)
+  - `postgres`
+- PostgreSQL schema migrations with [golang-migrate](https://github.com/golang-migrate/migrate)
+- Development workflow with [air](https://github.com/air-verse/air)
 
 ## API Versioning
 
-The API uses semantic versioning via URL path prefixes to support multiple versions simultaneously:
+The API uses semantic versioning via URL prefixes:
 
-- **Resource Endpoints**: All business logic routes are versioned under `/api/v1/` (e.g., `GET /api/v1/notes`)
-- **Health/Monitoring Endpoints**: Remain unversioned at the root level (`/health`, `/`) to ensure monitoring doesn't break across API versions
-- **Future-Proof Design**: New versions can be introduced (e.g., `/api/v2/`) without affecting existing clients
+- Business endpoints are versioned under `/api/v1`
+- Health endpoints remain unversioned (`/`, `/health`)
 
-### API v1 Endpoints
+### API v1 endpoints
 
-- `GET /api/v1/notes` - List all notes (with pagination)
-- `POST /api/v1/notes` - Create a new note
-- `GET /api/v1/notes/{noteID}` - Get a specific note
-- `PATCH /api/v1/notes/{noteID}` - Update a note
-- `DELETE /api/v1/notes/{noteID}` - Delete a note
+- `GET /api/v1/notes`
+- `POST /api/v1/notes`
+- `GET /api/v1/notes/{noteID}`
+- `PATCH /api/v1/notes/{noteID}`
+- `DELETE /api/v1/notes/{noteID}`
 
-### Monitoring Endpoints
+## Prerequisites
 
-- `GET /health` - Server health check
-- `GET /` - Server health check (alias)
+- Go 1.26.3+
+- GNU Make (optional)
+- Docker + Docker Compose (recommended for PostgreSQL dev setup)
+- `migrate` CLI for migrations
 
-## Quick Start
+### Install `migrate` CLI
 
-### Prerequisites
+On macOS:
 
-- Go 1.26.3 or later
-- GNU Make (optional, for convenience)
+```bash
+brew install golang-migrate
+```
 
-### Build
+## Quick start (memory storage)
+
+Build:
 
 ```bash
 make build
 ```
 
-This produces the `gomemo` binary with version information embedded from git tags.
-
-### Run
+Run:
 
 ```bash
-./gomemo
+./gomemo serve
 ```
-
-Set custom port:
+or 
 
 ```bash
-PORT=8080 ./gomemo
+make run
 ```
 
-### Development
 
-Run the development server with live reload:
+Memory mode does not require PostgreSQL.
+
+## Quick start (PostgreSQL with Docker Compose)
+
+1. Copy dev env file:
+
+```bash
+cp .env.example .env
+```
+
+2. Start PostgreSQL:
+
+```bash
+make db-up
+```
+
+3. Export environment from `.env`:
+
+```bash
+set -a
+source .env
+set +a
+```
+
+4. Run migrations:
+
+```bash
+make migrate-up
+```
+
+5. Seed fixture notes:
+
+```bash
+./gomemo seed
+```
+
+6. Start server:
+
+```bash
+./gomemo serve
+```
+
+## Development (air)
+
+The default `.air.toml` workflow expects PostgreSQL mode and runs migrations + seed before starting.
 
 ```bash
 go tool air
 ```
 
-Or run directly:
+Ensure `.env` exists and PostgreSQL is running (`make db-up`) before starting Air.
+
+## Configuration
+
+Environment variables:
+
+- `HOST` (default: `127.0.0.1`)
+- `PORT` (default: `8080`)
+- `ENV` (default: `prod`)
+- `STORAGE_TYPE` (default: `memory`, allowed: `memory`, `postgres`)
+- `DATABASE_URL` (required when `STORAGE_TYPE=postgres`)
+
+Example:
 
 ```bash
-go run ./cmd/gomemo
+ENV=dev STORAGE_TYPE=postgres DATABASE_URL=postgres://gomemo:gomemo@127.0.0.1:5432/gomemo?sslmode=disable ./gomemo serve
 ```
 
-Enable debug logging:
+## Database migrations
+
+Migration files are in `db/migrations`.
+
+- Apply all pending migrations:
 
 ```bash
-go run ./cmd/gomemo -debug
+make migrate-up
 ```
 
-### Testing
+- Roll back last migration:
+
+```bash
+make migrate-down
+```
+
+- Show migration version:
+
+```bash
+make migrate-version
+```
+
+- Create a new migration:
+
+```bash
+make migrate-create NAME=add_note_tags
+```
+
+All migration targets require `DATABASE_URL` to be set.
+
+## Make targets
+
+- `make build`
+- `make test`
+- `make run ARGS="serve"`
+- `make db-up`
+- `make db-down`
+- `make db-reset`
+- `make migrate-up`
+- `make migrate-down`
+- `make migrate-version`
+- `make migrate-create NAME=...`
+
+## Seeding behavior
+
+`gomemo seed` loads fixtures from `data/dev.yaml` and clears existing notes first, so seeding is repeatable in development.
+
+## Testing
 
 ```bash
 make test
 ```
 
-### Manual API Testing (`.http` files)
+### Manual API testing (`.http` files)
 
 Shared `.http` request collections are available under `api/`, similar to a Postman collection but versioned in git.
 
@@ -98,10 +195,10 @@ Shared `.http` request collections are available under `api/`, similar to a Post
 npm install
 ```
 
-2. Start the API server (recommended in dev mode so fixture notes are available):
+2. Start the API server:
 
 ```bash
-ENV=dev go run ./cmd/gomemo
+ENV=dev go run ./cmd/gomemo serve
 ```
 
 3. Run a single request file:
@@ -119,40 +216,9 @@ npx httpyac --env dev send -a "api/**/*.http"
 `BASE_URL`, `NOTE_ID`, and `MISSING_NOTE_ID` are configured in `.httpyac.js`.
 Some requests are intentionally negative test cases and are expected to return `400`/`404`.
 
-## Installation
-
-Install globally:
-
-```bash
-make install
-```
-
-## Available Commands
-
-- `make build` - Build the binary
-- `make install` - Install to `$GOPATH/bin`
-- `make run` - Run with optional args: `make run ARGS="-debug"`
-- `make test` - Run tests
-- `make clean` - Remove build artifacts
-- `make release` - Create a git tag and release: `make release VERSION=v0.1.0`
-
-## Configuration
-
-The application supports the following environment variables:
-
-- `PORT` - Server port (default: 3000)
-- `HOST` - Server address (default: 127.0.0.1)
-- `ENV` - Environment mode: `dev` or `prod` (default: prod)
-
-In development mode (`ENV=dev`), the database is automatically seeded with fixtures from `data/dev.yaml`.
-
 ## Architecture
 
-The project follows a layered architecture:
-
-- **Handlers** - HTTP request/response handling
-- **Services** - Business logic
-- **Storage** - Data persistence abstraction
-- **Models** - Domain entities
-
-Handlers register routes via the `RouteRegistrar` interface, enabling clean, modular route registration.
+- Handlers: HTTP request/response layer
+- Services: business logic
+- Storage: persistence abstraction
+- Models: domain entities

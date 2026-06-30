@@ -8,6 +8,7 @@ type Storage[O Object] interface {
 	FindByID(ctx context.Context, ID int64) (O, error)
 	InsertWithID(ctx context.Context, ID int64, o O) (O, error)
 	DeleteByID(ctx context.Context, ID int64) (bool, error)
+	Clear(ctx context.Context) error
 }
 
 type Identifiable interface {
