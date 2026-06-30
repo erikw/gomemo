@@ -88,6 +88,12 @@ go run ./cmd/gomemo -debug
 make test
 ```
 
+`make test` runs all Go tests (`go test ./...`), including:
+- Unit tests for core packages (`config`, `storage`, `seed`, `notes`, `httpx`, `api`)
+- In-memory HTTP integration tests for core `/api/v1/notes` flows
+
+Tests run automatically in CI on every push to `main` and on all pull requests.
+
 ### Manual API Testing (`.http` files)
 
 Shared `.http` request collections are available under `api/`, similar to a Postman collection but versioned in git.
